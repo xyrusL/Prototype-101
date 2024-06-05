@@ -25,9 +25,20 @@ servo_pinY = board.get_pin('d:10:s')  # pin 10 Arduino
 servo_pinX.write(90)
 servo_pinY.write(90)
 
+# Variables to store previous servo positions for smooth movement
+prev_servoX = 90
+prev_servoY = 90
+
 # Center of the frame
 center_x = ws // 2
 center_y = hs // 2
+
+# Initialize servoX and servoY
+servoX = 90
+servoY = 90
+
+# Initialize target_status
+target_status = "Target: No Hand Detected"
 
 # Define a function to draw the terminator-style overlay
 def draw_terminator_overlay(img, servoX, servoY, target_status, error_message=None):
@@ -78,16 +89,44 @@ while True:
                 bbox_center_x = x + w // 2
                 bbox_center_y = y + h // 2
 
-                # Convert position to degree value
-                servoX = int(np.interp(bbox_center_x, [0, ws], [0, 180]))
-                servoY = int(np.interp(bbox_center_y, [0, hs], [0, 180]))
+                # Check if the bounding box is outside the frame
+                if x < 0 or x + w > ws or y < 0 or y + h > hs:
+                    # Trigger Algorithm: Move the servo to catch the hand
+                    if x < 0:
+                        servoX = 0
+                    elif x + w > ws:
+                        servoX = 180
+                    else:
+                        servoX = int(np.interp(bbox_center_x, [0, ws], [0, 180]))
 
-                # Write to servo pins
-                servo_pinX.write(servoX)
-                servo_pinY.write(servoY)
+                    if y < 0:
+                        servoY = 180
+                    elif y + h > hs:
+                        servoY = 0
+                    else:
+                        servoY = int(np.interp(bbox_center_y, [0, hs], [0, 180]))
 
-                print(f'\033[94mHand Position x: {bbox_center_x} y: {bbox_center_y}\033[0m')  # Print in blue color
-                print(f'\033[94mServo Value x: {servoX} y: {servoY}\033[0m')  # Print in blue color
+                else:
+                    # Calculate the offset from the center of the bounding box to the center of the frame
+                    offset_x = center_x - bbox_center_x
+                    offset_y = center_y - bbox_center_y
+
+                    # Convert position to degree value, adjusting for center offset
+                    servoX = int(np.interp(center_x - offset_x, [0, ws], [0, 180]))
+                    servoY = int(np.interp(center_y - offset_y, [0, hs], [0, 180]))
+
+            # Smooth movement
+            smooth_factor = 0.2
+            servoX = int(prev_servoX + smooth_factor * (servoX - prev_servoX))
+            servoY = int(prev_servoY + smooth_factor * (servoY - prev_servoY))
+            prev_servoX, prev_servoY = servoX, servoY
+
+            # Write to servo pins
+            servo_pinX.write(servoX)
+            servo_pinY.write(servoY)
+
+            print(f'\033[94mHand Position x: {bbox_center_x} y: {bbox_center_y}\033[0m')  # Print in blue color
+            print(f'\033[94mServo Value x: {servoX} y: {servoY}\033[0m')  # Print in blue color
 
         else:
             target_status = "Target: No Hand Detected"
@@ -104,10 +143,22 @@ while True:
         error_message = f"Error fetching image: {e.reason}"
         print(error_message)
         print(f"\033[92mTrying to reconnect...\033[0m")
+        # Draw the error message on the frame
+        img = np.zeros((hs, ws, 3), np.uint8)  # Black frame
+        draw_terminator_overlay(img, prev_servoX, prev_servoY, target_status, error_message=error_message)
+        cv2.imshow("Image", img)
+        cv2.waitKey(5000)  # Display the error message for 5 seconds
+        continue
 
     except Exception as e:
-        error_message = f"An error occurred: {e}"
+        error_message = f"Error: {e}"
         print(error_message)
         print(f"\033[92mTrying to reconnect...\033[0m")
+        # Draw the error message on the frame
+        img = np.zeros((hs, ws, 3), np.uint8)  # Black frame
+        draw_terminator_overlay(img, prev_servoX, prev_servoY, target_status, error_message=error_message)
+        cv2.imshow("Image", img)
+        cv2.waitKey(5000)  # Display the error message for 5 seconds
+        continue
 
 cv2.destroyAllWindows()
