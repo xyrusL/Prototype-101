@@ -13,7 +13,7 @@ hands = mpHand.Hands(min_detection_confidence=0.8)
 
 # ESP camera URL
 url = "http://192.168.254.137/cam-hi.jpg"
-ws, hs = 800, 600
+ws, hs = 800, 600 # Width and Height of the frame
 
 # Initialize Arduino board and servo pins
 port = "COM3"
