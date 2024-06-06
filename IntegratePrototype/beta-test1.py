@@ -6,9 +6,9 @@ from drawHandMarks import draw_landmarks
 from collections import deque
 from boundingBox import *
 
-import time
 import pyfirmata
 import urllib.request
+import urllib.error
 from PIL import Image
 from io import BytesIO
 
@@ -59,7 +59,7 @@ def draw_terminator_overlay(img, servoX, servoY, target_status, error_message=No
 
 # Main function
 def main():
-    global prev_servoX, prev_servoY
+    global prev_servoX, prev_servoY, servoX, servoY, target_status
     cap_device = args.url
 
     use_static_image_mode = args.use_static_image_mode
@@ -151,10 +151,10 @@ def main():
 
                     # Exponential moving average for smooth movement
                     smooth_factor = 0.2
-                    target_servoX = np.interp(bbox_center_x, [0, cap_width], [0, 180])
-                    target_servoY = np.interp(bbox_center_y, [0, cap_height], [0, 180])
-                    servoX = int(smooth_factor * target_servoX + (1 - smooth_factor) * prev_servoX)
-                    servoY = int(smooth_factor * target_servoY + (1 - smooth_factor) * prev_servoY)
+                    target_servo_x = np.interp(bbox_center_x, [0, cap_width], [0, 180])
+                    target_servo_y = np.interp(bbox_center_y, [0, cap_height], [0, 180])
+                    servoX = int(smooth_factor * target_servo_x + (1 - smooth_factor) * prev_servoX)
+                    servoY = int(smooth_factor * target_servo_y + (1 - smooth_factor) * prev_servoY)
                     prev_servoX, prev_servoY = servoX, servoY
 
                     # Write to servo pins
@@ -162,7 +162,7 @@ def main():
                     servo_pinY.write(servoY)
 
                     # Update target_status
-                    target_status = "Target: Tracking..."
+                    target_status = "Target: Hand Detected"
                     # Draw Terminator-style overlay
                     debug_image = draw_terminator_overlay(debug_image, servoX, servoY, target_status)
 
@@ -184,8 +184,8 @@ def main():
 
         except urllib.error.URLError as e:
             error_message = f"Error: {e.reason}"
-            blackFrame = np.zeros((cap_height, cap_width, 3), np.uint8)
-            debug_image = draw_terminator_overlay(blackFrame, prev_servoX, prev_servoY, error_message)
+            black_frame = np.zeros((cap_height, cap_width, 3), np.uint8)
+            debug_image = draw_terminator_overlay(black_frame, prev_servoX, prev_servoY, error_message)
             cv.imshow('Hand Tracking', debug_image)
             print(f"Error: {e.reason}")
             print(f"\033[92mTrying to reconnect...\033[0m")
@@ -194,8 +194,8 @@ def main():
 
         except Exception as e:
             error_message = f"Error: {str(e)}"
-            blackFrame = np.zeros((cap_height, cap_width, 3), np.uint8)
-            debug_image = draw_terminator_overlay(blackFrame, prev_servoX, prev_servoY, error_message)
+            black_frame = np.zeros((cap_height, cap_width, 3), np.uint8)
+            debug_image = draw_terminator_overlay(black_frame, prev_servoX, prev_servoY, error_message)
             cv.imshow('Hand Tracking', debug_image)
             print(f"Error: {str(e)}")
             print(f"\033[92mTrying to reconnect...\033[0m")
