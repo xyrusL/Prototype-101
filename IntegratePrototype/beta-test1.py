@@ -13,11 +13,14 @@ import numpy as np
 import cv2 as cv
 import copy
 
-args = get_args()
-cap_width = args.width
-cap_height = args.height
+# configuration details
+url_ip = "Enter the IP address here"
+arduino_port = "COM3" #specify the port here
+cap_width = "800" #specify the width here
+cap_height = "600" #specify the height here
 
-board = pyfirmata.Arduino(args.port)
+args = get_args()
+board = pyfirmata.Arduino(url_port.port)
 servo_pinX = board.get_pin('d:9:s')  # pin 9 Arduino
 servo_pinY = board.get_pin('d:10:s')  # pin 10 Arduino
 
@@ -61,7 +64,7 @@ def draw_terminator_overlay(img, servoX, servoY, target_status, error_message=No
 # Main function
 def main():
     global prev_servoX, prev_servoY, servoX, servoY, target_status
-    cap_device = args.url
+    cap_device = url_ip
 
     use_static_image_mode = args.use_static_image_mode
     min_detection_confidence = args.min_detection_confidence
