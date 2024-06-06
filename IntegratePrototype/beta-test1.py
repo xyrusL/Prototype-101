@@ -1,16 +1,17 @@
 import csv
 import mediapipe as mp
-
 from keypointClassifier import KeyPointClassifier
 from drawHandMarks import draw_landmarks
 from collections import deque
 from boundingBox import *
-
 import pyfirmata
 import urllib.request
 import urllib.error
 from PIL import Image
 from io import BytesIO
+import numpy as np
+import cv2 as cv
+import copy
 
 args = get_args()
 cap_width = args.width
@@ -177,7 +178,7 @@ def main():
                 # Update target_status
                 target_status = "Target: No Hand Detected"
                 # Draw Terminator-style overlay
-                debug_image = draw_terminator_overlay(debug_image, 90, 90, target_status)
+                debug_image = draw_terminator_overlay(debug_image, prev_servoX, prev_servoY, target_status)
 
             # Show the debug image
             cv.imshow('Hand Tracking', debug_image)
@@ -185,7 +186,7 @@ def main():
         except urllib.error.URLError as e:
             error_message = f"Error: {e.reason}"
             black_frame = np.zeros((cap_height, cap_width, 3), np.uint8)
-            debug_image = draw_terminator_overlay(black_frame, prev_servoX, prev_servoY, error_message)
+            debug_image = draw_terminator_overlay(black_frame, 90, 90, error_message)
             cv.imshow('Hand Tracking', debug_image)
             print(f"Error: {e.reason}")
             print(f"\033[92mTrying to reconnect...\033[0m")
@@ -195,7 +196,7 @@ def main():
         except Exception as e:
             error_message = f"Error: {str(e)}"
             black_frame = np.zeros((cap_height, cap_width, 3), np.uint8)
-            debug_image = draw_terminator_overlay(black_frame, prev_servoX, prev_servoY, error_message)
+            debug_image = draw_terminator_overlay(black_frame, 90, 90, error_message)
             cv.imshow('Hand Tracking', debug_image)
             print(f"Error: {str(e)}")
             print(f"\033[92mTrying to reconnect...\033[0m")
