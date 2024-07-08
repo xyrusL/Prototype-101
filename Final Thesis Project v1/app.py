@@ -7,25 +7,30 @@ import speech_recognition as sr
 import pyttsx3
 from utils import CvFpsCalc
 from subPart.keyPointClassifier import KeyPointClassifier
-from subPart.args import get_args
 from subPart.draw_landmarks import draw_landmarks
 from subPart.bounding_rect import calc_bounding_rect
 from subPart.process import *
 
-showLandMarks = True
-soundDetected = True
-letter_confidence_time = 1.5
+# Setup parameters
+showLandMarks = True  # Change to True if you want to see the landmarks
+soundDetected = True  # Change to True if you want to hear the sound
+letter_confidence_time = 1.5  # Time in seconds for the letter to be recognized
+voice_version = 1  # 1 for voice 1, 2 for voice 2
 
-cap_width = 1280
-cap_height = 720
-min_detection_confidence = 0.7
-min_tracking_confidence = 0.5
+camera_id = 1  # Change to 0 if you want to use your webcam
+cap_width = 800  # Change the width of the frame
+cap_height = 600  # Change the height of the frame
+min_detection_confidence = 0.7  # Change the detection confidence value
+min_tracking_confidence = 0.5  # Change the tracking confidence value
 
+# Do not change the values below
 recognized_speech_text = ""
 speech_recognition_active = False
 stop_speech_recognition = False
 speech_thread = None
+automatic_listening = False
 
+# Setup speech recognition
 def recognize_speech():
     global recognized_speech_text, stop_speech_recognition
 
@@ -48,12 +53,21 @@ def recognize_speech():
             if stop_speech_recognition:
                 break
 
+# Setup speech synthesis
 def start_speech_recognition():
     global speech_thread
     if speech_thread is None or not speech_thread.is_alive():
         speech_thread = threading.Thread(target=recognize_speech)
         speech_thread.start()
 
+# Stop speech recognition
+def stop_speech_recognition_thread():
+    global stop_speech_recognition
+    stop_speech_recognition = True
+    if speech_thread is not None:
+        speech_thread.join()
+
+# Speech synthesis
 def speak_text(text):
     engine = pyttsx3.init()
 
@@ -64,11 +78,11 @@ def speak_text(text):
     thread = threading.Thread(target=_speak)
     thread.start()
 
+# Main
 def main():
-    global speech_recognition_active, stop_speech_recognition, recognized_speech_text, speech_thread
-    args = get_args()
-    cap_device = args.device
-    use_static_image_mode = args.use_static_image_mode
+    global speech_recognition_active, stop_speech_recognition, recognized_speech_text, speech_thread, automatic_listening
+    cap_device = camera_id
+    use_static_image_mode = 'store_true'
     use_brect = True
 
     cap = cv.VideoCapture(cap_device)
@@ -119,7 +133,7 @@ def main():
             word_sentence_active = not word_sentence_active
             if word_sentence_active:
                 speech_recognition_active = False
-                stop_speech_recognition = True
+                stop_speech_recognition_thread()
                 recognized_speech_text = ""
                 word = ""
                 sentence = ""
@@ -130,13 +144,27 @@ def main():
                 cursor_position -= 1
         elif key == ord('s'):
             speech_recognition_active = not speech_recognition_active
-            if speech_recognition_active:
-                word_sentence_active = False
+            automatic_listening = False  # Reset to manual mode when toggling 's'
+            stop_speech_recognition_thread()
+            recognized_speech_text = ""
+        elif key == ord('a') and speech_recognition_active:
+            automatic_listening = not automatic_listening
+            if automatic_listening:
                 stop_speech_recognition = False
                 start_speech_recognition()
+                print("Automatic listening ON")
             else:
-                stop_speech_recognition = True
+                stop_speech_recognition_thread()
                 recognized_speech_text = ""
+                print("Automatic listening OFF")
+        elif key == ord('l') and speech_recognition_active and not automatic_listening:  # Manual listening toggle
+            stop_speech_recognition = not stop_speech_recognition
+            if not stop_speech_recognition:
+                start_speech_recognition()
+                print("Manual listening ON")
+            else:
+                recognized_speech_text = ""
+                print("Manual listening OFF")
         elif key == ord('r'):
             if word_sentence_active and sentence:
                 speak_text(sentence)
@@ -211,9 +239,13 @@ def main():
     cap.release()
     cv.destroyAllWindows()
 
+# Play sound
 def play_sound_for_hand_sign(hand_sign_label):
     def play_sound():
         file_path = f'voices/{hand_sign_label}.mp3'
+        if voice_version == 2:
+            file_path = f'voices/{hand_sign_label}.mp3'
+
         pygame.mixer.init()
         pygame.mixer.music.load(file_path)
         pygame.mixer.music.play()

@@ -2,6 +2,7 @@ import cv2 as cv
 import copy
 import itertools
 
+
 def draw_info_text(image, brect, handedness, hand_sign_text, finger_gesture_text):
     cv.rectangle(image, (brect[0], brect[1]), (brect[2], brect[1] - 22), (0, 0, 0), -1)
     info_text = handedness.classification[0].label
