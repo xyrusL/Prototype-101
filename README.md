@@ -56,7 +56,3 @@ Contributions to improve the system are welcome. Please follow these steps:
 2. Create a new branch
 3. Make your changes and commit them
 4. Push to your fork and submit a pull request
-
-## Acknowledgements
-- Developed by CS San Mateo 2024
-- Special thanks to [list any contributors or resources used]
