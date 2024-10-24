@@ -1,8 +1,0 @@
-mediapipe
-pygame
-speechrecognition
-pyttsx3
-numpy
-tensorflow
-opencv-python
-pyaudio

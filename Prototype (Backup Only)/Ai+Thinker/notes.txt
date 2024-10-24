@@ -1,2 +1,0 @@
-You need to download the library of esp32 by Expressif Systems inside of the ide. 
-Then find the ESP32 -> Camera -> CameraWebServer = done!!
