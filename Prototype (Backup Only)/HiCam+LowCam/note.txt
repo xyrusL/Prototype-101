@@ -1,0 +1,1 @@
+You need to download the library of espcam32 first. Go to this link: https://github.com/yoursunny/esp32cam
